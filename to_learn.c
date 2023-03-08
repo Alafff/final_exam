@@ -6,14 +6,14 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 
-int srvsd = 0, maxsd = 0, clidx[42 * 2048] = {0}, idx = 0;
+int srvsd, maxsd, clidx[42 * 2048] = {0}, idx;
 struct sockaddr_in srv;
 fd_set csds, rsds, wsds;
 char *msgs[42 * 2048] = {0}, wbuf[42 * 2048] = {0}, rbuf[42 * 2048] = {0};
 
 void	failed() {
 	char *err = "Fatal error\n";
-	write(STDERR_FILENO, err, strlen(err));
+	write(2, err, strlen(err));
 	exit(EXIT_FAILURE);
 }
 
@@ -69,7 +69,7 @@ void	serving() {
 	while(1) {
 		wsds = rsds = csds;
 		if (select(maxsd + 1, &rsds, &wsds, NULL, NULL) == -1)
-			failed(NULL);
+			failed();
 		for (int sd = 0; sd <= maxsd; ++sd) {
 			if (FD_ISSET(sd, &rsds)) {
 				if (sd == srvsd && adder())
@@ -83,7 +83,7 @@ void	serving() {
 
 int		main(int ac, char **av) {
 	if (ac != 2)
-		write(STDERR_FILENO, "Wrong number of argument" ,strlen("Wrong number of argument"));
+		write(2, "Wrong number of argument" ,strlen("Wrong number of argument"));
 	else
 	{
 	bzero(&srv, sizeof(srv));
