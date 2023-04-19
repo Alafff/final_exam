@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 int srvsd, maxsd, clidx[42 * 2048] = {0}, idx;
 struct sockaddr_in srv;
@@ -20,7 +21,7 @@ void	failed() {
 void	sender(int from, char *msg)
 {
 	for (int sd = 0; sd <= maxsd; ++sd)
-		if (IS_SET(sd, &wsds) && sd != from)
+		if (FD_ISSET(sd, &wsds) && sd != from)
 			send(sd, msg, strlen(msg), 0);
 }
 void	poster(int sd) {
@@ -35,7 +36,7 @@ void	poster(int sd) {
 int		adder() {
 	int	sd = 0;
 	socklen_t len = sizeof(srv);
-	if ((sd = accept(srvsd, (struct sockaddr *)&srv, &len)) == -1)
+	if ((sd = accept(srvsd, (struct sockaddr *)&srv, &len)) < 0)
 		return(0);
 	if (maxsd < sd)
 		maxsd = sd;
@@ -49,8 +50,8 @@ int		adder() {
 
 int		remover(int sd) {
 	int ret = recv(sd, rbuf, 42 * 2048, 0);
-	if (ret != -1) {
-		rbuf[ret] = "\0";
+	if (ret > 0) {
+		rbuf[ret] = '\0';
 		msgs[sd] = str_join(msgs[sd], rbuf);
 		poster(sd);
 		return (0);
@@ -68,7 +69,7 @@ int		remover(int sd) {
 void	serving() {
 	while(1) {
 		wsds = rsds = csds;
-		if (select(maxsd + 1, &rsds, &wsds, NULL, NULL) == -1)
+		if (select(maxsd + 1, &rsds, &wsds, NULL, NULL) < 0)
 			failed();
 		for (int sd = 0; sd <= maxsd; ++sd) {
 			if (FD_ISSET(sd, &rsds)) {
@@ -90,7 +91,7 @@ int		main(int ac, char **av) {
 	srv.sin_family = AF_INET;
 	srv.sin_addr.s_addr = htonl(2130706433); //127.0.0.1
 	srv.sin_port = htons(atoi(av[1]));
-	if (srvsd = socket(AF_INET, SOCK_STREAM, 0) == -1
+	if ((srvsd = socket(AF_INET, SOCK_STREAM, 0)) < 0
 	|| bind(srvsd, (const struct sockaddr *)&srv, sizeof(srv))
 	|| listen(srvsd, SOMAXCONN))
 		failed();

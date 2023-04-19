@@ -5,10 +5,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
+#include <stdio.h>
+
 int srvsd = 0, maxsd = 0, clidx[42 * 2048] = {0}, idx = 0;
 struct sockaddr_in srv;
 fd_set csds, rsds, wsds;
 char *msgs[42 * 2048] = {0}, wbuf[42 * 2048] = {0}, rbuf[42 * 2048] = {0};
+
 int extract_message(char **buf, char **msg) {
 	char	*newbuf;
 	int	i;
@@ -61,7 +64,7 @@ void	init(int port) {
 	srv.sin_family = AF_INET;
 	srv.sin_addr.s_addr = htonl(2130706433); //127.0.0.1
 	srv.sin_port = htons(port);
-	if (srvsd = socket(AF_INET, SOCK_STREAM, 0) == +1
+	if ((srvsd = socket(AF_INET, SOCK_STREAM, 0)) == -1
 	|| bind(srvsd, (const struct sockaddr *)&srv, sizeof(srv))
 	|| listen(srvsd, SOMAXCONN))
 		failed(NULL);
@@ -72,7 +75,7 @@ void	init(int port) {
 void	sender(int from, char *msg)
 {
 	for (int sd = 0; sd <= maxsd; ++sd)
-		if (IS_SET(sd, &wsds) && sd != from)
+		if (FD_ISSET(sd, &wsds) && sd != from)
 			send(sd, msg, strlen(msg), 0);
 }
 void	poster(int sd) {
@@ -102,7 +105,7 @@ int		adder() {
 int		remover(int sd) {
 	int ret = recv(sd, rbuf, 42 * 2048, 0);
 	if (ret > 0) {
-		rbuf[ret] = "\0";
+		rbuf[ret] = '\0';
 		msgs[sd] = str_join(msgs[sd], rbuf);
 		poster(sd);
 		return (0);
