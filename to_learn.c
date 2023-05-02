@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/select.h>
 
 int srvsd, maxsd, clidx[42 * 2048] = {0}, idx;
 struct sockaddr_in srv;
@@ -56,7 +57,7 @@ int		remover(int sd) {
 		poster(sd);
 		return (0);
 	}
-	sprintf(wbuf, "server: client %d just left\n", sd);
+	sprintf(wbuf, "server: client %d just left\n", clidx[sd]);
 	sender(sd, wbuf);
 	if (msgs[sd])
 		free(msgs[sd]);
